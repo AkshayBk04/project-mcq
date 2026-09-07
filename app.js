@@ -175,7 +175,10 @@
     if(b.sourceType==="page"&&q.page){
       row.innerHTML=`<a href="${escapeAttr(b.sourcePdf)}#page=${q.page}" target="_blank" rel="noopener">Open source page ${q.page} ↗</a>`;
     }else if(b.sourceType==="reference"){
-      row.innerHTML=`<a href="${escapeAttr(b.sourcePdf)}" target="_blank" rel="noopener">Open Unit I reference notes ↗</a>${b.sourceDocx?`<a href="${escapeAttr(b.sourceDocx)}" target="_blank" rel="noopener">Word version ↗</a>`:""}`;
+      const links=[];
+      if(b.sourcePdf) links.push(`<a href="${escapeAttr(b.sourcePdf)}" target="_blank" rel="noopener">Open reference notes ↗</a>`);
+      if(b.sourceDocx) links.push(`<a href="${escapeAttr(b.sourceDocx)}" target="_blank" rel="noopener">Reference notes (Word) ↗</a>`);
+      row.innerHTML=links.join("");
     }else row.innerHTML="";
   }
 
