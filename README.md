@@ -1,61 +1,27 @@
-# PROJECT MCQ v1.0
+# PROJECT MCQ v1.1
 
-A static, mobile-friendly quiz website built from the uploaded book:
+This update adds **FEX 602 – Educational Technology and Instructional Design, Unit I** to the live PROJECT MCQ website.
 
-**An Introduction to Educational Technology — Prasanth Venpakal**
+## Question banks now included
+1. An Introduction to Educational Technology — 1,060 MCQs
+2. FEX 602, Unit I — 312 MCQs
 
-## Included
-- 1,060 MCQs
-- 8 section filters
-- Study Mode with instant feedback
-- Exam Mode with end-of-test scoring
-- 10 / 25 / 50 / 100 / all-question quizzes
-- Random question order
-- Random answer-option order
-- Source-page links back to the included PDF
-- Question navigator
-- Mark for Review
-- Bookmarks
-- Answer review
-- Browser-saved attempt history, best score and bookmarks
-- Light / dark theme
-- Responsive mobile layout
+**Total: 1,372 MCQs**
 
-## Run it locally
-Just open `index.html` in Chrome, Edge, Firefox or Safari.
+## New in v1.1
+- Multi-bank library/home screen
+- FEX 602 Unit I section filtering
+- Study Mode now displays explanations and references when available
+- Unit I reference notes available directly from the quiz
+- Existing book page-source links preserved
+- Exam Mode, bookmarks, Mark for Review, randomization and result review preserved
 
-The question bank is loaded from a JavaScript data file so it also works when opened directly from your computer without a local web server.
+## GitHub update
+Upload the contents of this folder to the root of the existing `project-mcq` repository and allow GitHub to replace files with the same names. The important updated files are:
+- `index.html`
+- `styles.css`
+- `app.js`
+- `data/catalog.js`
+- new FEX reference files inside `assets/`
 
-## Put it on GitHub Pages
-1. Create a new GitHub repository, for example `project-mcq`.
-2. Upload **all files and folders from this package** to the repository root.
-3. In GitHub, open **Settings → Pages**.
-4. Under **Build and deployment**, choose:
-   - Source: **Deploy from a branch**
-   - Branch: **main**
-   - Folder: **/(root)**
-5. Save.
-6. After GitHub finishes deploying, the site will be available at:
-   `https://YOUR-USERNAME.github.io/project-mcq/`
-
-## Adding another book later
-The site is designed so the question bank can be expanded without rebuilding the basic quiz engine.
-
-Current data files:
-- `data/educational-technology.js` — used by the website
-- `data/educational-technology.json` — clean structured copy for future processing
-
-## Folder structure
-```
-PROJECT_MCQ_v1/
-├── index.html
-├── styles.css
-├── app.js
-├── README.md
-├── .nojekyll
-├── assets/
-│   └── AN_INTRODUCTION_TO_EDUCATIONAL_TECHNOLOG.pdf
-└── data/
-    ├── educational-technology.js
-    └── educational-technology.json
-```
+The older `data/educational-technology.js` and `.json` files can remain; v1.1 uses `data/catalog.js`.
