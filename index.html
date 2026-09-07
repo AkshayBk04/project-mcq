@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="PROJECT MCQ — browser-based study and exam practice platform.">
+  <title>PROJECT MCQ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button class="brand" id="brandBtn" type="button" aria-label="Go to home">
+        <span class="brand-mark">P</span>
+        <span>
+          <strong>PROJECT MCQ</strong>
+          <small>Study • Practice • Review</small>
+        </span>
+      </button>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="homeView" class="view active">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">QUESTION BANK</p>
+            <h1>Turn your books into an exam-ready MCQ bank.</h1>
+            <p class="hero-copy">Choose a section, pick a quiz size, and practise in Study or Exam mode. Your bookmarks and attempt history stay on this browser.</p>
+          </div>
+          <div class="hero-stat">
+            <span id="totalQuestions">1,060</span>
+            <small>questions ready</small>
+          </div>
+        </div>
+
+        <div class="layout-grid">
+          <section class="panel book-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">AVAILABLE BOOK</p>
+                <h2 id="bookTitle">An Introduction to Educational Technology</h2>
+                <p class="muted" id="bookAuthor">Prasanth Venpakal</p>
+              </div>
+              <span class="pill" id="bookCount">1,060 MCQs</span>
+            </div>
+
+            <div class="section-list" id="sectionList"></div>
+
+            <div class="source-note">
+              <span>📘</span>
+              <div>
+                <strong>Source-grounded bank</strong>
+                <p>Each question retains the source page from the uploaded book.</p>
+              </div>
+            </div>
+          </section>
+
+          <aside class="panel setup-panel">
+            <p class="eyebrow">BUILD YOUR QUIZ</p>
+
+            <label class="field">
+              <span>Section</span>
+              <select id="sectionSelect"></select>
+            </label>
+
+            <label class="field">
+              <span>Number of questions</span>
+              <select id="countSelect">
+                <option value="10">10 questions</option>
+                <option value="25" selected>25 questions</option>
+                <option value="50">50 questions</option>
+                <option value="100">100 questions</option>
+                <option value="all">All available</option>
+              </select>
+            </label>
+
+            <div class="field">
+              <span>Quiz mode</span>
+              <div class="mode-grid">
+                <label class="mode-card">
+                  <input type="radio" name="mode" value="study" checked>
+                  <strong>Study</strong>
+                  <small>Instant answer feedback</small>
+                </label>
+                <label class="mode-card">
+                  <input type="radio" name="mode" value="exam">
+                  <strong>Exam</strong>
+                  <small>Results only after submission</small>
+                </label>
+              </div>
+            </div>
+
+            <label class="toggle-row">
+              <input id="shuffleQuestions" type="checkbox" checked>
+              <span>
+                <strong>Randomize questions</strong>
+                <small>New order on every attempt</small>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <input id="shuffleOptions" type="checkbox" checked>
+              <span>
+                <strong>Randomize options</strong>
+                <small>Shuffle A–D while preserving the answer</small>
+              </span>
+            </label>
+
+            <button class="primary-btn" id="startBtn" type="button">Start Quiz</button>
+
+            <div class="mini-stats">
+              <div><strong id="attemptCount">0</strong><span>Attempts</span></div>
+              <div><strong id="bestScore">—</strong><span>Best score</span></div>
+              <div><strong id="bookmarkCount">0</strong><span>Bookmarks</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="quizView" class="view">
+        <div class="quiz-shell">
+          <div class="quiz-main">
+            <div class="quiz-toolbar">
+              <button class="text-btn" id="quitBtn" type="button">← Exit</button>
+              <div class="quiz-meta">
+                <span id="modeBadge" class="pill">Study mode</span>
+                <span id="timer">00:00</span>
+              </div>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-copy">
+                <span id="progressText">Question 1 of 25</span>
+                <span id="answeredText">0 answered</span>
+              </div>
+              <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+            </div>
+
+            <article class="question-card">
+              <div class="question-topline">
+                <span id="sectionBadge" class="section-badge"></span>
+                <button id="bookmarkBtn" class="bookmark-btn" type="button" aria-label="Bookmark question">☆</button>
+              </div>
+              <h2 id="questionText"></h2>
+              <div id="options" class="options"></div>
+
+              <div id="feedback" class="feedback hidden"></div>
+
+              <div class="source-row">
+                <a id="sourceLink" href="#" target="_blank" rel="noopener">Open source page ↗</a>
+              </div>
+            </article>
+
+            <div class="quiz-controls">
+              <button class="secondary-btn" id="prevBtn" type="button">Previous</button>
+              <button class="review-btn" id="markBtn" type="button">Mark for Review</button>
+              <button class="primary-btn compact" id="nextBtn" type="button">Next</button>
+            </div>
+          </div>
+
+          <aside class="navigator panel">
+            <div class="navigator-head">
+              <div>
+                <p class="eyebrow">QUESTION NAVIGATOR</p>
+                <strong id="navigatorSummary">0 / 25 answered</strong>
+              </div>
+            </div>
+            <div class="legend">
+              <span><i class="dot answered"></i>Answered</span>
+              <span><i class="dot marked"></i>Review</span>
+              <span><i class="dot current"></i>Current</span>
+            </div>
+            <div id="navigatorGrid" class="navigator-grid"></div>
+            <button id="submitBtn" class="primary-btn" type="button">Finish Quiz</button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="resultsView" class="view">
+        <div class="results-wrap">
+          <section class="panel score-panel">
+            <p class="eyebrow">QUIZ COMPLETE</p>
+            <div id="scoreRing" class="score-ring"><span id="scorePercent">0%</span></div>
+            <h1 id="scoreHeadline">0 / 0 correct</h1>
+            <p id="scoreSubtext" class="muted"></p>
+
+            <div class="result-stats">
+              <div><strong id="correctCount">0</strong><span>Correct</span></div>
+              <div><strong id="wrongCount">0</strong><span>Incorrect</span></div>
+              <div><strong id="unansweredCount">0</strong><span>Unanswered</span></div>
+              <div><strong id="timeTaken">00:00</strong><span>Time</span></div>
+            </div>
+
+            <div class="result-actions">
+              <button id="retryBtn" class="primary-btn" type="button">New Random Quiz</button>
+              <button id="homeBtn" class="secondary-btn" type="button">Back to Home</button>
+            </div>
+          </section>
+
+          <section class="panel review-panel">
+            <div class="review-head">
+              <div>
+                <p class="eyebrow">ANSWER REVIEW</p>
+                <h2>Review your attempt</h2>
+              </div>
+              <select id="reviewFilter">
+                <option value="all">All questions</option>
+                <option value="wrong">Incorrect only</option>
+                <option value="unanswered">Unanswered only</option>
+                <option value="bookmarked">Bookmarked only</option>
+              </select>
+            </div>
+            <div id="reviewList" class="review-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="data/educational-technology.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
