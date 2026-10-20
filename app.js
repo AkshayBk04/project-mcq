@@ -82,7 +82,7 @@
       $("sourceNoteText").textContent="Study Mode shows the explanation and the quoted Unit I reference for every question.";
     } else {
       $("sourceNoteTitle").textContent="Source-page tracking included";
-      $("sourceNoteText").textContent="Each question retains the page number from the uploaded textbook.";
+      $("sourceNoteText").textContent="References link to the supplied source or examination paper. Original images preserve tables, codes and symbols where needed.";
     }
   }
 
@@ -96,11 +96,15 @@
   function selectedMode(){ return document.querySelector('input[name="mode"]:checked').value; }
 
   function prepareQuestion(q,shuffleOpts){
-    const correct = q.answer ?? q.correctIndex ?? "ABCD".indexOf(q.correctLetter||"A");
-    const opts=q.options.map((text,idx)=>({text,correct:idx===correct}));
-    const arranged=shuffleOpts?shuffle(opts):opts;
-    return {...q,displayOptions:arranged,displayCorrectIndex:arranged.findIndex(o=>o.correct)};
+    const correct = q.answer === null ? -1 : (q.answer === null ? -1 : (q.answer === null ? -1 : (q.answer === null ? -1 : (q.answer ?? q.correctIndex ?? "ABCD".indexOf(q.correctLetter||"A")))));
+    const accepted=q.correctIndices || [correct];
+    const opts=q.options.map((text,idx)=>({text,correct:accepted.includes(idx)}));
+    const arranged=shuffleOpts&&!q.keepOptionOrder?shuffle(opts):opts;
+    return {...q,displayOptions:arranged,displayCorrectIndex:arranged.findIndex(o=>o.correct),displayCorrectIndices:arranged.map((o,i)=>o.correct?i:-1).filter(i=>i>=0)};
   }
+
+  function isCorrect(q,i){return !q.unscored&&q.displayCorrectIndices.includes(i);}
+  function answerText(q){return q.displayCorrectIndices.map(i=>`${LETTERS[i]}. ${q.displayOptions[i].text}`).join(" OR ");}
 
   function startQuiz(reuse=null){
     const b=bank();
@@ -140,14 +144,19 @@
     $("progressBar").style.width=`${((state.current+1)/state.quiz.length)*100}%`;
     $("sectionBadge").textContent=q.section||b.unit||"Question bank";
     $("questionText").textContent=q.question;
+    document.getElementById("passagePanel")?.remove();document.getElementById("qualityPanel")?.remove();document.getElementById("questionImagePanel")?.remove();
+    if(q.passage||q.passageImage){const box=document.createElement("details");box.id="passagePanel";box.className="source-passage";box.open=true;const summary=document.createElement("summary");summary.textContent="Reading passage";box.append(summary);const body=document.createElement("div");body.textContent=q.passage||"";box.append(body);if(q.passageImage){const img=document.createElement("img");img.src=q.passageImage;img.alt="Original reading passage";img.className="source-question-image";box.append(img);}$("questionText").before(box);}
+    if(q.qualityNote){const note=document.createElement("div");note.id="qualityPanel";note.className="quality-note";note.textContent=q.unscored?"Review item — excluded from scoring. The explanation discusses the answer issue.":"Source wording or answer has been checked or reconstructed; see the explanation.";$("questionText").before(note);}
 
+
+    if(q.questionImage){const img=document.createElement("img");img.id="questionImagePanel";img.className="source-question-image";img.src=q.questionImage;img.alt="Original question and answer choices";$("questionText").after(img);}
     const bk=bookmarkKey(q);
     $("bookmarkBtn").textContent=state.bookmarks.has(bk)?"★":"☆";
     $("bookmarkBtn").classList.toggle("active",state.bookmarks.has(bk));
     $("markBtn").textContent=state.marked.has(q.id)?"Marked for Review ✓":"Mark for Review";
 
     $("options").innerHTML=q.displayOptions.map((opt,idx)=>{
-      let cls="option";if(answer===idx)cls+=" selected";if(locked&&idx===q.displayCorrectIndex)cls+=" correct";if(locked&&answer===idx&&idx!==q.displayCorrectIndex)cls+=" incorrect";
+      let cls="option";if(answer===idx)cls+=" selected";if(locked&&isCorrect(q,idx))cls+=" correct";if(locked&&!q.unscored&&answer===idx&&!isCorrect(q,idx))cls+=" incorrect";
       return `<button class="${cls}" type="button" data-index="${idx}" ${locked?"disabled":""}><span class="letter">${LETTERS[idx]}</span><span>${escapeHTML(opt.text)}</span></button>`;
     }).join("");
     $("options").querySelectorAll(".option").forEach(btn=>btn.addEventListener("click",()=>selectAnswer(Number(btn.dataset.index))));
@@ -161,9 +170,9 @@
   function renderFeedback(q,answer){
     const fb=$("feedback"),ex=$("explanationBox");
     if(state.mode!=="study"||answer===undefined){fb.className="feedback hidden";fb.innerHTML="";ex.className="explanation hidden";ex.innerHTML="";return;}
-    const ok=answer===q.displayCorrectIndex;
-    fb.className=`feedback ${ok?"good":"bad"}`;
-    fb.innerHTML=ok?`✓ Correct`:`✕ Incorrect. Correct answer: <strong>${LETTERS[q.displayCorrectIndex]}. ${escapeHTML(q.displayOptions[q.displayCorrectIndex].text)}</strong>`;
+    const ok=isCorrect(q,answer);
+    fb.className=`feedback ${q.unscored?"":ok?"good":"bad"}`;
+    fb.innerHTML=q.unscored?`Review item — not scored. ${answerText(q)?"Printed/provisional key: "+escapeHTML(answerText(q))+". ":"No reliable key available. "}Read the explanation before relying on this answer.`:ok?"✓ Correct":`✕ Incorrect. Correct answer: <strong>${escapeHTML(answerText(q))}</strong>`;
     if(q.explanation||q.reference){
       ex.className="explanation";
       ex.innerHTML=`${q.explanation?`<strong>Explanation</strong><div>${escapeHTML(q.explanation)}</div>`:""}${q.reference?`<div class="ref"><b>Reference:</b> ${escapeHTML(q.reference)}</div>`:""}`;
@@ -173,10 +182,10 @@
   function renderSource(q,b,locked){
     const row=$("sourceRow");
     if(b.sourceType==="page"&&q.page){
-      row.innerHTML=`<a href="${escapeAttr(b.sourcePdf)}#page=${q.page}" target="_blank" rel="noopener">Open source page ${q.page} ↗</a>`;
+      row.innerHTML=`<a href="${escapeAttr(q.sourcePdf||b.sourcePdf)}#page=${q.page}" target="_blank" rel="noopener">Open source page ${q.page} ↗</a>`;
     }else if(b.sourceType==="reference"){
       const links=[];
-      if(b.sourcePdf) links.push(`<a href="${escapeAttr(b.sourcePdf)}" target="_blank" rel="noopener">Open reference notes ↗</a>`);
+      if(b.sourcePdf) links.push(`<a href="${escapeAttr(q.sourcePdf||b.sourcePdf)}" target="_blank" rel="noopener">Open reference notes ↗</a>`);
       if(b.sourceDocx) links.push(`<a href="${escapeAttr(b.sourceDocx)}" target="_blank" rel="noopener">Reference notes (Word) ↗</a>`);
       row.innerHTML=links.join("");
     }else row.innerHTML="";
@@ -197,17 +206,18 @@
   function finishQuiz(){
     if(!state.quiz.length)return;clearInterval(state.timerId);updateTimer();
     const b=bank();
-    const rows=state.quiz.map(q=>{const chosen=state.answers[q.id],answered=chosen!==undefined,correct=answered&&chosen===q.displayCorrectIndex;return{q,chosen,answered,correct};});
-    const correct=rows.filter(r=>r.correct).length,unanswered=rows.filter(r=>!r.answered).length,wrong=state.quiz.length-correct-unanswered,percent=Math.round(correct/state.quiz.length*100);
+    const rows=state.quiz.map(q=>{const chosen=state.answers[q.id],answered=chosen!==undefined,correct=answered&&isCorrect(q,chosen);return{q,chosen,answered,correct};});
+    const scored=rows.filter(r=>!r.q.unscored),excluded=rows.length-scored.length;
+    const correct=scored.filter(r=>r.correct).length,unanswered=scored.filter(r=>!r.answered).length,wrong=scored.length-correct-unanswered,percent=scored.length?Math.round(correct/scored.length*100):0;
     state.lastResult={rows,correct,wrong,unanswered,percent,elapsed:state.elapsed};
 
     const current=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}"),history=current.history||[];
-    history.unshift({date:new Date().toISOString(),bankId:state.bankId,bankTitle:b.displayTitle,percent,correct,total:state.quiz.length,section:state.config.section,mode:state.mode,elapsed:state.elapsed});
+    if(scored.length) history.unshift({date:new Date().toISOString(),bankId:state.bankId,bankTitle:b.displayTitle,percent,correct,total:scored.length,excluded,section:state.config.section,mode:state.mode,elapsed:state.elapsed});
     persist({history:history.slice(0,100)});
 
-    $("scorePercent").textContent=`${percent}%`;
+    $("scorePercent").textContent=scored.length?`${percent}%`:"N/A";
     $("scoreRing").style.background=`conic-gradient(var(--accent) ${percent}%,var(--line) ${percent}% 100%)`;
-    $("scoreHeadline").textContent=`${correct} / ${state.quiz.length} correct`;
+    $("scoreHeadline").textContent=`${correct} / ${scored.length} scored questions correct${excluded?` · ${excluded} review items excluded`:""}`;
     $("scoreSubtext").textContent=`${b.displayTitle}${b.unit?" • "+b.unit:""}`;
     $("correctCount").textContent=correct;$("wrongCount").textContent=wrong;$("unansweredCount").textContent=unanswered;$("timeTaken").textContent=formatTime(state.elapsed);
     renderReview("all");updateStats();setView("resultsView");
@@ -215,13 +225,13 @@
 
   function renderReview(filter){
     if(!state.lastResult)return;const b=bank();let rows=state.lastResult.rows;
-    if(filter==="wrong")rows=rows.filter(r=>r.answered&&!r.correct);
+    if(filter==="wrong")rows=rows.filter(r=>!r.q.unscored&&r.answered&&!r.correct);
     if(filter==="unanswered")rows=rows.filter(r=>!r.answered);
     if(filter==="bookmarked")rows=rows.filter(r=>state.bookmarks.has(`${state.bankId}:${r.q.id}`));
     $("reviewList").innerHTML=rows.length?rows.map(r=>{
-      const q=r.q,user=r.answered?`${LETTERS[r.chosen]}. ${q.displayOptions[r.chosen].text}`:"Not answered",correct=`${LETTERS[q.displayCorrectIndex]}. ${q.displayOptions[q.displayCorrectIndex].text}`;
-      let source=b.sourceType==="page"&&q.page?`<a href="${b.sourcePdf}#page=${q.page}" target="_blank" rel="noopener">page ${q.page} ↗</a>`:`${escapeHTML(q.reference||"")}`;
-      return `<article class="review-item"><h3>${escapeHTML(q.question)}</h3><div class="review-answer">Your answer: <strong class="${r.correct?"good":"bad"}">${escapeHTML(user)}</strong></div><div class="review-answer">Correct answer: <strong class="good">${escapeHTML(correct)}</strong></div>${q.explanation?`<div class="review-explanation"><b>Explanation:</b> ${escapeHTML(q.explanation)}</div>`:""}<div class="review-meta">${escapeHTML(q.section||"")} · ${source}</div></article>`;
+      const q=r.q,user=r.answered?`${LETTERS[r.chosen]}. ${q.displayOptions[r.chosen].text}`:"Not answered",correct=q.unscored?(answerText(q)?"Printed/provisional key (not scored): "+answerText(q):"No reliable key — not scored"):answerText(q);
+      let source=b.sourceType==="page"&&q.page?`<a href="${escapeAttr(q.sourcePdf||b.sourcePdf)}#page=${q.page}" target="_blank" rel="noopener">page ${q.page} ↗</a>`:`${escapeHTML(q.reference||"")}`;
+      return `<article class="review-item"><h3>${escapeHTML(q.question)}</h3>${q.passage||q.passageImage?`<details class="source-passage"><summary>Reading passage</summary>${escapeHTML(q.passage||"")}${q.passageImage?`<img class="source-question-image" src="${escapeAttr(q.passageImage)}" alt="Original reading passage" loading="lazy">`:""}</details>`:""}${q.questionImage?`<img class="source-question-image" src="${escapeAttr(q.questionImage)}" alt="Original question and options" loading="lazy">`:""}<div class="review-answer">Your answer: <strong class="${r.correct?"good":"bad"}">${escapeHTML(user)}</strong></div><div class="review-answer">${q.unscored?"Source answer":"Correct answer"}: <strong class="good">${escapeHTML(correct)}</strong></div>${q.explanation?`<div class="review-explanation"><b>Explanation:</b> ${escapeHTML(q.explanation)}</div>`:""}<div class="review-meta">${escapeHTML(q.section||"")} · ${source}</div></article>`;
     }).join(""):`<p class="muted">No questions match this filter.</p>`;
   }
 
